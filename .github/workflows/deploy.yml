@@ -1,0 +1,39 @@
+name: Deploy to GitHub Pages
+
+on:
+  # 每次推送到 main 分支时触发
+  push:
+    branches: [ main ]
+  # 允许手动触发
+  workflow_dispatch:
+
+# 设置权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout your repository using git
+        uses: actions/checkout@v5
+      
+      - name: Install, build, and upload your site
+        uses: withastro/action@v5
+        with:
+          path: . # Astro 项目的根目录
+          # node-version: 24 # 可选：指定 Node 版本
+          # package-manager: bun@latest # 可选：你的项目使用 bun
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
