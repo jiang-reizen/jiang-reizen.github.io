@@ -12,9 +12,10 @@ import SkillLayout from '@/components/home/SkillLayout.astro'
 import avatar from '@/assets/avatar.png'
 import config from '@/site-config'
 
-const languages = ['Html', 'JavaScript', 'CSS', 'Shell']
+const languages = ['C/C++', 'Python', 'Qt', 'Pascal']
 const frontend = ['TypeScript', 'Vite', 'Webpack', 'Astro']
 const backend = ['Vercel', 'Waline']
+// const 
 
 const MAX_POSTS = 10
 const allPosts = await getBlogCollection()
@@ -131,6 +132,20 @@ const allPostsByDate = sortMDByDate(allPosts).slice(0, MAX_POSTS)
       <Section title='Education'>
         <Card
           as='a'
+          heading='Peking University'
+          subheading='Undergraduate Student, Zhi Class 2024, Peking University'
+          date='August 2024 - Present'
+          href='https://zhi-class.ai'
+        >
+        </Card>
+        <Card
+          as='a'
+          heading='Sun Yat-sen Memorial Secondary School'
+          date='September 2018 - July 2024'
+          href='https://zsjz.zsedu.cn'>
+        </Card>
+        <!-- <Card
+          as='a'
           heading='Lorem ipsum'
           subheading='Lorem ipsum dolor sit amet, vidit suscipit at mei.'
           date='August 2021 - July 2025'
@@ -145,10 +160,10 @@ const allPostsByDate = sortMDByDate(allPosts).slice(0, MAX_POSTS)
           <li>Lorem ipsum dolor sit amet consectetur adipisicing elit. Molestiae, pariatur!</li>
         </ul> */
           }
-        </Card>
+        </Card> -->
       </Section>
 
-      <Section title='Website List'>
+      <!-- <Section title='Website List'>
         <div class='grid grid-cols-1 gap-3 sm:grid-cols-2'>
           <ProjectCard
             href='https://www.youtube.com/watch?v=dQw4w9WgXcQ'
@@ -175,9 +190,9 @@ const allPostsByDate = sortMDByDate(allPosts).slice(0, MAX_POSTS)
             imagePath='/src/assets/projects/wen-qiao-g_w8I64FiO0-unsplash.jpg'
           />
         </div>
-      </Section>
+      </Section> -->
 
-      <Section title='Certifications'>
+      <!-- <Section title='Certifications'>
         <Card
           as='a'
           heading='Lorem ipsum'
@@ -185,14 +200,14 @@ const allPostsByDate = sortMDByDate(allPosts).slice(0, MAX_POSTS)
           date='July 2024'
           href='https://www.youtube.com/watch?v=dQw4w9WgXcQ'
         />
-      </Section>
+      </Section> -->
 
       <Section title='Skills'>
         <SkillLayout title='Languages' skills={languages} />
-        <SkillLayout title='Frontend' skills={frontend} />
-        <SkillLayout title='Backend' skills={backend} />
+        <!-- <SkillLayout title='Frontend' skills={frontend} />
+        <SkillLayout title='Backend' skills={backend} /> -->
       </Section>
     </div>
-    <Quote class='mt-12' />
+    <!-- <Quote class='mt-12' /> -->
   </main>
 </PageLayout>
