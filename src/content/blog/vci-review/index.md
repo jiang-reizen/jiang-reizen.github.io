@@ -96,15 +96,39 @@ Quad mesh:
 
 ## Discrete differential geometry
 
+### 局部平均区域
+
+1. 重心单元 (barycentric cell)，即把三角形的两边的中点和三角形的重心顺次连起来．
+2. 泰森多边形单元 (Voronoi cell)，是由每条边的中垂线确定的区域，根据中垂线的性质，每个三角形内，蓝色区域中的点到 x 的距离都会小于另两个顶点，若顶点周围存在钝角三角形，则蓝色区域会超出三角形．
+3. 混合泰森多边形单元 (mixed Voronoi cell) 是对上一种方法的改进，在出现钝角三角形时，用三条边的中点连线来框选出该三角形内的蓝色区域．
+
 ### Normal Vector
 
 单个三角形的法向量是朴素的，关键是如何定义顶点的法向量。
+
+$$
+\mathbf n(x) = \text{normalize}(\sum_{T \in \Omega(x)} \alpha_{T}\mathbf n(T))
+$$
+
+1. $\alpha_T = 1$
+2. $\alpha_T = \text{area}(T)$
+3. $\alpha_T = \theta(T)$
 
 ### 三角坐标及对应的梯度
 
 ### 拉普拉斯算子
 
+均匀拉普拉斯
+
+$$
+(\Delta f) _i = \frac{1}{N}\sum_{j \in \Omega(i)} (f_j-f_i)
+$$
+
 余切拉普拉斯
+
+$$
+(\Delta f) _i = \frac{1}{2A_i} \sum_{j \in \Omega(i)}(\cot \alpha_{ij} + \cot \beta _{ij})(f_j-f_i)
+$$
 
 ### 梯度与拉普拉斯
 
@@ -295,3 +319,72 @@ far plane 是考虑的最远的平面（渲染范围）
 在真实的相机中：
 
 ![](View_Camera.png)
+
+# Randering
+
+### Shadow Map
+
+从光源视角，渲染出一张纹理图，记录最近距离。
+
+对于要计算的一个像素（对应点 $P$），计算 $P$ 在光源视角的位置，并计算距离。并于纹理图比较，判断是否在阴影中。
+
+### Mipmap
+
+反走样的方法。
+
+由于远处一个像素可能在纹理坐标上代表一个很大的范围，所以提前把原始的纹理图按照不同的比例压缩（多个像素的信息合并到一个像素上）。
+
+这样根据表示范围的大小，在对应的压缩后的纹理图上提取信息，在相邻的两层之间插值。
+
+由于可能不同方向的压缩比例不同（**各向异性**），所以不仅是同比例的压缩，还有不同比例压缩的组合。
+
+### 法向贴图（Normal Mapping） or 凹凸贴图（BumpMapping）
+
+凹凸不平的表面并不影响碰撞等宏观性质，那么可以把凹凸不平的效果记录在纹理中，比如记录法向。
+
+这样不改变表面的几何性质，但是又能正确的渲染颜色。
+
+### 环境光贴图（Environment Mapping）
+
+考虑把周围的环境（远处的信息），用贴图表示，而不是一个几何物体，一种方法是 skybox，这样就可以快速计算环境的光照了。
+
+注意这里要让环境的深度始终为 $1.0$ 这样才是背景，在 skybox 中强行钦定 $z=w$。
+
+### Ray Tracing
+
+一个像素只有一条 ray 会导致走样，使用 supersampling 的方法反走样。
+
+### Shadow Rays
+
+从要计算颜色的点 $P$ 向光源方向发射一条射线，如果撞到物体说明被遮挡。
+
+不用计算最近交点，只要撞到任意一个不透明物体就是遮挡的。返回布尔值或者透明度。
+
+基础光追 Whitted-style 中光源是一个点，非黑即白（硬阴影）。
+
+现代路径追踪 Path Tracing 或者分布式光线追踪中，光源有面积，在光源表面随机采样所个点，每个点都计算 Shadow ray，然后按照比例计算亮度。
+
+### Path Tracing
+
+Distribution ray tracing 的一种
+
+a ray tracing method based on integral transport equation and rendering equation
+
+### Bidirectional Reflectance Distribution Function
+
+$$
+f_r(\omega_i \rightarrow \omega_r) = \frac{\mathrm{d} L_r(\omega_r)}{\mathrm{d}E_i(\omega_i)} = \frac{\mathrm d L_r(\omega_r)}{L_i(\omega_i)\cos \theta_i \mathrm d \omega_i}
+$$
+
+考虑自发光
+
+$$
+L_o(p, \omega_o) = L_e(p, \omega_o) + \int_{H^2} L_i(p, \omega_i)f_r(p,\omega_i,\omega_o)(\mathbf{n}\cdot\omega_i) \mathrm{d}\omega_i
+$$
+
+Monte Carlo solver: 随机若干个 $\omega_i$ 计算积分。碰到物体就递归（光追）
+
+### Bidirectional path tracing (BDPT), unbiased
+
+### Photon Mapping, biased
+
