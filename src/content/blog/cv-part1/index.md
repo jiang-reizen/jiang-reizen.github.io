@@ -733,7 +733,93 @@ Nesterov Momentum
 
 ## Convolutional Networks I
 
+基于三个先验：
+1. 平移不变性 (Translation Invariance)：物体在图像中移动，其语义不变。
+2. 局部性 (Locality)：像素之间的依赖关系主要存在于局部区域（使用局部感受野）。
+3. 层次性 (Hierarchy)：从局部特征逐渐组合成全局特征（感受野逐层增大）
 
+卷积层:
+- input $N\times C_{in}\times H \times W$
+- kernel $C_{out}\times C_{in} \times K_H \times K_W$
+- output: $N\times C_{out}\times H' \times W'$
+- parameters: $S$(stride), $P$ (padding)
+
+L 层卷积感受野扩大到 1+L(K-1)
+
+特殊卷积：
+- 1*1 卷积，用于升降维（通道数）
+- 分组卷积，输入通道和卷积核分组，减少参数量
+- 空洞卷积 (Dilated/Atrous Convolution)：通过在卷积核元素间插入空洞来扩大感受野，而不增加参数量，就是在图像上不是连续取感受野了，而是有间隔的取。
+
+Boundary Effects: 边界处理 'constant', 'reflect', 'replicate' or 'circular'
+
+AlexNet 的数据处理：
+- Whitening : subtract the **mean** and normalize with the **standard deviations**.
+- Augmentation: transform images with a random transformation.
+  
+  Horizontal Flips, Random Crops and Scales, Color Jitter(Randomly change the brightness, contrast, saturation and hue of an image)
+
+Regularization: 
+- CutOut: (Training)Set random images regions to 0 or random values; (Testing)Use the whole image
+- Mixup: (Training)Train on random blends of images （比如 0.4 的猫 和 0.6 的狗）; (Testing) Use original images
+- CutMix 上述二者的结合
+
+Dropout: (Training)随机 Mask 掉神经元，并进行缩放 (Scale); (Testing)使用完整网络，权重保持不变 (Inverted Dropout 的实现方式)。通常用于参数量巨大的全连接层 (FC)。现代网络 (如 ResNet) 使用全局平均池化 (GAP) 代替 FC，因此不再需要 Dropout 。
+
+Dropout 迫使每个神经元在其他神经元可能缺席的情况下，仍能提取有用的特征。
+
+基础的 Dropout 是在 Training 是按照 p 的权重声称 mask 停用一部分神经元，在 Testing 时计算出来的权值按照 p 的比例缩放。
+
+更现代的 Inverted Dropout 是在 Training 时就考虑 p 对总权重的影响，提前 /p（补齐能量）。在 Testing 时不做任何处理。这样在 Testing 时更快，部署也更简单。
+
+迁移学习 (Transfer Learning)：利用在 ImageNet 等大数据集上预训练好的模型来解决小数据集问题。
+
+1. 特征提取 (Feature Extraction)：冻结 (Freeze) 卷积基 (Backbone)，只**移除最后的全连接层**，训练一个**新的线性分类器**。
+2. 微调 (Fine-Tuning)：移除最后一层，用**更小的学习率** (通常是原 LR 的 1/10) 更新**整个网络或部分高层**权重 。
+
+## Convolutional Networks II
+
+核心主线是：如何通过精巧的设计（更小的卷积核、瓶颈结构、残差连接）让网络变得更深（Deeper）且更高效（Efficient）。
+
+VGGNet：小卷积核
+
+统一使用 $3*3$ 卷积核以及 $2*2$ 池化层。两个 33 卷积核等于一个 55 卷积核，并且有更多的激活函数，非线性更强，以及参数总量变少。
+
+GoogLeNet：Inception Module, Global Average Pooling，Auxiliary Classifiers
+- Inception Module: 并行使用 11， 33， 55 卷积核 以及 33 池化，然后拼接。让网络能自动选择合适的感受野。在 33 和 55 卷积核之前用 11 卷积减少通道数。
+- Global Average Pooling: 用 global average pooling 替代 FC
+- Auxiliary Classifiers: 在网络中间添加额外的 Loss 分支，帮助梯度回传，缓解梯度消失问题（在推理时去掉。额外的旁边的一条支路。
+
+深层神经网络的一些问题：
+- Gradient Exploding 权重过大，最后算出来的信号值极大，计算梯度 NaN，无法收敛
+- Gradient Vanishing 权重过小，激活值趋近于 0
+
+基于上面的问题，提出一些解决方法：
+- 权重初始化策略：初始化的目标是保持每一层输出的方差与输入的方差一致
+  - Xavier 初始化，适用于 Sigmoid 或 Tanh 激活函数，或者是线性激活函数
+  - Kaiming 初始化，专为 ReLU (Rectified Linear Unit) 及其变体（如 Leaky ReLU）设计
+- 归一化技术
+  - Batch Normalization 在每一层的激活函数之前，对一个 Batch 内的数据进行归一化。
+  - Group Normalization 由于 BN 严重依赖 Batch Size，不稳定。在通道 (Channel) 维度上分组，在每组内计算均值和方差进行归一化，与 H,W,Batch Size 独立
+
+ResNet: 深度！
+
+理论上来说，深的网络应该至少有更浅的网络的能力，但是深的网络难以训练，甚至达不到浅网络的能力。
+
+思路：不学 H(x) = x 而是学 F(x) = H(x) - x
+
+残差块 (Residual Block): 
+- 引入跳跃连接 (Skip Connection)，直接将输入 x 加到输出上 shorcut。
+- 在主路径上，使用 11(4C -> C), 33(C -> C), 11(C -> 4C) 的 conv，减少计算量
+
+ResNeXt：引入了一个新的维度——基数 (Cardinality)，通过分组卷积 (Grouped Convolution) 来提高模型的表达能力，同时保持计算量和参数量不变。
+
+把通道拆分成 G 组（G 条平行路径），分别卷积后再拼接。最后加上 shorcut。实际上等价于**分组卷积**。
+
+一些其他的神经网络：
+- DenseNet 每一层的输入是前面所有层输出的拼接
+- MobileNets 专为移动端设计，度可分离卷积 (Depthwise Separable Convolution)，将标准卷积分解为 Depthwise (空间) + Pointwise (通道)，大幅减少计算量 。
+- Squeeze-and-Excitation Networks (SENet)：Adds global context to each ResNet block
 
 ## RNN and Transformer
 
