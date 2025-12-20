@@ -1,7 +1,7 @@
 ---
 title: CV Review Part1
 publishDate: 2025-12-09
-updatedDate: 2025-12-09
+updatedDate: 2025-12-17
 description: 'No decription.'
 tags:
   - CV
